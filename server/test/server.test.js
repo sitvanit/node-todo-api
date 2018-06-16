@@ -107,3 +107,63 @@ describe('GET /todos/:id', () => {
         expect(res.statusCode).toBe(404);
     });
 });
+
+describe('DELETE /todos/:id', () => {
+    let todos;
+
+    beforeEach(async () => {
+        todos = [{
+            _id: new ObjectId(),
+            text: 'First test todo'
+        }, {
+            _id: new ObjectId(),
+            text: 'Second test todo'
+        }];
+
+        await Todo.remove({});
+        await Todo.insertMany(todos);
+    });
+
+    it('should remove a todo', async () => {
+        const id = todos[1]._id;
+        const res = await request(app).delete(`/todos/${id}`);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.todo._id).toBe(id.toString());
+
+        const todo = await Todo.findById(id);
+        expect(todo).toBeFalsy();
+    });
+
+    it('should return 404 if objectId is invalid', async () => {
+        const res = await request(app).delete('/todos/123');
+        expect(res.statusCode).toBe(404);
+    });
+
+    it('should return 404 if todo not found', async () => {
+        const res = await request(app).delete(`/todos/${new ObjectId}`);
+        expect(res.statusCode).toBe(404);
+    });
+});
+
+describe('DELETE /todos', () => {
+    let todos;
+
+    beforeEach(async () => {
+        todos = [{
+            _id: new ObjectId(),
+            text: 'First test todo'
+        }, {
+            _id: new ObjectId(),
+            text: 'Second test todo'
+        }];
+
+        await Todo.remove({});
+        await Todo.insertMany(todos);
+    });
+
+    it('should remove all', async () => {
+         const res = await request(app).delete('/todos');
+         expect(res.statusCode).toBe(200);
+         expect(res.body.ok).toBe(1);
+    });
+});
