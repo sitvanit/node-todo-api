@@ -22,6 +22,18 @@ app.post('/todos', (req, res) => {
     })
 });
 
+app.get('/todos', async (req, res) => {
+    let todos;
+
+    try {
+        todos = await Todo.find()
+    } catch (e) {
+        res.status(400).send(e);
+    }
+
+    res.send({ todos });
+});
+
 app.listen(3000, () => {
     console.log('Started on port 3000');
 });
