@@ -4,11 +4,11 @@ const request = require('supertest');
 const { app } = require('../server');
 const { Todo } = require('../models/todo');
 
-beforeEach(async () => {
-    await Todo.remove({})
-});
-
 describe('POST /todos', () => {
+    beforeEach(async () => {
+        await Todo.remove({});
+    });
+
     it('should create a new todo - promises', (done) => {
         const text = 'Test todo text';
 
@@ -50,5 +50,26 @@ describe('POST /todos', () => {
 
         const todos = await Todo.find();
         expect(todos.length).toBe(0);
+    });
+});
+
+describe('GET /todos', () => {
+    let todos;
+
+    beforeEach(async () => {
+        todos = [{
+            text: 'First test todo'
+        }, {
+            text: 'Second test todo'
+        }];
+
+        await Todo.remove({});
+        await Todo.insertMany(todos);
+    });
+
+    it('should get all todos', async () => {
+        const res = await request(app).get('/todos');
+        expect(res.statusCode).toBe(200);
+        expect(res.body.todos.length).toBe(2);
     });
 });

@@ -26,7 +26,7 @@ app.get('/todos', async (req, res) => {
     let todos;
 
     try {
-        todos = await Todo.find()
+        todos = await Todo.find();
     } catch (e) {
         res.status(400).send(e);
     }
