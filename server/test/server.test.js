@@ -146,10 +146,8 @@ describe('DELETE /todos/:id', () => {
 });
 
 describe('DELETE /todos', () => {
-    let todos;
-
     beforeEach(async () => {
-        todos = [{
+        const todos = [{
             _id: new ObjectId(),
             text: 'First test todo'
         }, {
@@ -166,4 +164,45 @@ describe('DELETE /todos', () => {
          expect(res.statusCode).toBe(200);
          expect(res.body.ok).toBe(1);
     });
+});
+
+describe('PATCH /todos/:id', () => {
+    let todos;
+
+    beforeEach(async () => {
+        todos = [{
+            _id: new ObjectId(),
+            text: 'First test todo'
+        }, {
+            _id: new ObjectId(),
+            text: 'Second test todo',
+            completed: true,
+            completedAt: 333
+        }];
+
+        await Todo.remove({});
+        await Todo.insertMany(todos);
+    });
+
+    it('should update the todo', async () => {
+        const todo = todos[0];
+        const text = "updated todo1";
+        const res = await request(app).patch(`/todos/${todo._id}`).send({ text, completed: true });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.todo.text).toBe(text);
+        expect(res.body.todo.completed).toBe(true);
+        expect(res.body.todo.completedAt).toBeTruthy();
+    });
+
+    it('should clear completedAt when todo is not completed', async () => {
+        const todo = todos[1];
+        const text = "updated todo2";
+        const res = await request(app).patch(`/todos/${todo._id}`).send({ text, completed: false });
+        expect(res.statusCode).toBe(200);
+        expect(res.body.todo.text).toBe(text);
+        expect(res.body.todo.completed).toBe(false);
+        expect(res.body.todo.completedAt).toBeFalsy();
+    });
+
+    it('')
 });

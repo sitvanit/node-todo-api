@@ -113,7 +113,7 @@ app.patch('/todos/:id', async (req, res) => {
     }
     // try to update
     try {
-        todo = await Todo.findByIdAndUpdate(id, { $set: body })
+        todo = await Todo.findByIdAndUpdate(id, { $set: body }, { new: true }) // the new will return the new object. the default is the old one.
     } catch (e) {
         return res.status(400).send();
     }
@@ -122,7 +122,7 @@ app.patch('/todos/:id', async (req, res) => {
         res.status(404).send();
     }
     // send response
-    res.send(todo);
+    res.send({ todo });
 });
 
 
