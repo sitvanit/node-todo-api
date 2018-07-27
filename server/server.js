@@ -7,6 +7,7 @@ require('../config/config');
 const { mongoose } = require('./db/mongoose');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
+const { authenticate } = require('./middleware/authenticate');
 
 const app = express();
 const port = process.env.PORT;
@@ -14,7 +15,7 @@ const port = process.env.PORT;
 // middleware
 app.use(bodyParser.json()); // make it possible to access req.body
 
-/** post todos **/
+/** create todos **/
 app.post('/todos', (req, res) => {
     const todo = new Todo({
         text: req.body.text
@@ -27,7 +28,7 @@ app.post('/todos', (req, res) => {
     })
 });
 
-/** find all **/
+/** get all todos **/
 app.get('/todos', async (req, res) => {
     let todos;
     // try to find
@@ -40,7 +41,7 @@ app.get('/todos', async (req, res) => {
     res.send({ todos });
 });
 
-/** find by id **/
+/** get todos by id **/
 app.get('/todos/:id', async (req, res) => {
     let todo;
     const id = req.params.id;
@@ -62,7 +63,7 @@ app.get('/todos/:id', async (req, res) => {
     res.send({ todo });
 });
 
-/** delete by id **/
+/** delete todos by id **/
 app.delete('/todos/:id', async (req, res) => {
     let todo;
     const id = req.params.id;
@@ -97,7 +98,7 @@ app.delete('/todos', async (req, res) => {
     res.send(result);
 });
 
-/** update **/
+/** update todos **/
 app.patch('/todos/:id', async (req, res) => {
     const id = req.params.id;
     const body = _.pick(req.body, ['text', 'completed']);
@@ -126,7 +127,7 @@ app.patch('/todos/:id', async (req, res) => {
     res.send({ todo });
 });
 
-/** post user **/
+/** create user **/
 app.post('/users', async (req, res) => {
     let token;
     const body = _.pick(req.body, ['email', 'password']);
@@ -141,6 +142,10 @@ app.post('/users', async (req, res) => {
     }
 });
 
+/** authenticate **/
+app.get('/users/me', authenticate, async (req, res) => {
+    res.send(req.user);
+});
 
 app.listen(port, () => {
     console.log(`Started up at port ${port}`);
