@@ -14,7 +14,7 @@ const port = process.env.PORT;
 // middleware
 app.use(bodyParser.json()); // make it possible to access req.body
 
-/** post **/
+/** post todos **/
 app.post('/todos', (req, res) => {
     const todo = new Todo({
         text: req.body.text
@@ -124,6 +124,21 @@ app.patch('/todos/:id', async (req, res) => {
     }
     // send response
     res.send({ todo });
+});
+
+/** post user **/
+app.post('/users', async (req, res) => {
+    let token;
+    const body = _.pick(req.body, ['email', 'password']);
+    const user = new User(body);
+
+    try {
+        await user.save();
+        token = await user.generateAuthToken();
+        return res.header('x-auth', token).send(user);
+    } catch (e) {
+        res.status(400).send(e)
+    }
 });
 
 
