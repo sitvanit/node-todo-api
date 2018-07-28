@@ -21,6 +21,7 @@ describe('todo-api', () => {
 
                 request(app)
                     .post('/todos')
+                    .set('x-auth', users[0].tokens[0].token)
                     .send({ text })
                     .expect(200)
                     .expect((res) => {
@@ -37,74 +38,105 @@ describe('todo-api', () => {
                             done();
                         }).catch(e => done(e))
                     })
+
+                done();
             });
 
-            it('should create a new todo - async await', async () => {
-                const text = 'Test todo text';
-
-                const res = await request(app).post('/todos').send({ text });
-                expect(res.statusCode).toBe(200);
-                expect(res.body.text).toBe(text);
-
-                const todos = await Todo.find();
-                expect(todos.length).toBe(1);
-                expect(todos[0].text).toBe(text);
-            });
-
-            it('should not create todo with invalid body data', async () => {
-                const res = await request(app).post('/todos').send({});
-                expect(res.statusCode).toBe(400);
-
-                const todos = await Todo.find();
-                expect(todos.length).toBe(0);
+            it('should not create todo with invalid body data', (done) => {
+                request(app)
+                    .post('/todos').send({})
+                    .set('x-auth', users[0].tokens[0].token)
+                    .end((err, res) => {
+                        expect(res.statusCode).toBe(400);
+                        Todo.find().then(todos => {
+                            expect(todos.length).toBe(0);
+                        });
+                    });
+                done();
             });
         });
 
         describe('GET /todos', () => {
-            it('should get all todos', async () => {
-                const res = await request(app).get('/todos');
-                expect(res.statusCode).toBe(200);
-                expect(res.body.todos.length).toBe(2);
+            it('should get all todos', (done) => {
+                request(app)
+                    .get('/todos')
+                    .set('x-auth', users[0].tokens[0].token)
+                    .end((err, res) => {
+                        expect(res.statusCode).toBe(200);
+                        expect(res.body.todos.length).toBe(1);
+                    });
+                done();
             });
         });
 
         describe('GET /todos/:id', () => {
-            it('should return todo doc', async () => {
-                const res = await request(app).get(`/todos/${todos[0]._id}`);
-                expect(res.statusCode).toBe(200);
-                expect(res.body.todo.text).toBe(todos[0].text);
+            it('should return todo doc', (done) => {
+                request(app)
+                    .get(`/todos/${todos[0]._id}`)
+                    .set('x-auth', users[0].tokens[0].token)
+                    .end((err, res) => {
+                        expect(res.statusCode).toBe(200);
+                        expect(res.body.todo.text).toBe(todos[0].text);
+                    });
+                done();
             });
 
-            it('should return 404 for non-object ids', async () => {
-                const res = await request(app).get('/todos/123');
-                expect(res.statusCode).toBe(404);
+            it('should return 404 for non-object ids', (done) => {
+                request(app)
+                    .get('/todos/123')
+                    .set('x-auth', users[0].tokens[0].token)
+                    .end((err, res) => {
+                        expect(res.statusCode).toBe(404);
+                    });
+                done();
             });
 
-            it('should return 404 if todo is not found', async () => {
-                const res = await request(app).get(`/todos/${new ObjectId()}`);
-                expect(res.statusCode).toBe(404);
+            it('should return 404 if todo is not found', (done) => {
+                request(app)
+                    .get(`/todos/${new ObjectId()}`)
+                    .set('x-auth', users[0].tokens[0].token)
+                    .end((err, res) => {
+                        expect(res.statusCode).toBe(404);
+                    });
+                done();
             });
         });
 
         describe('DELETE /todos/:id', () => {
-            it('should remove a todo', async () => {
+            it('should remove a todo', (done) => {
                 const id = todos[1]._id;
-                const res = await request(app).delete(`/todos/${id}`);
-                expect(res.statusCode).toBe(200);
-                expect(res.body.todo._id).toBe(id.toString());
+                request(app)
+                    .delete(`/todos/${id}`)
+                    .set('x-auth', users[0].tokens[0].token)
+                    .end((res, err) => {
+                        expect(res.statusCode).toBe(200);
+                        expect(res.body.todo._id).toBe(id.toString());
 
-                const todo = await Todo.findById(id);
-                expect(todo).toBeFalsy();
+                        Todo.findById(id).then(todo => {
+                            expect(todo).toBeFalsy();
+                        });
+                    });
+                done()
             });
 
-            it('should return 404 if objectId is invalid', async () => {
-                const res = await request(app).delete('/todos/123');
-                expect(res.statusCode).toBe(404);
+            it('should return 404 if objectId is invalid', (done) => {
+                request(app)
+                    .delete('/todos/123')
+                    .set('x-auth', users[0].tokens[0].token)
+                    .end((err, res) => {
+                        expect(res.statusCode).toBe(404);
+                    });
+                done();
             });
 
-            it('should return 404 if todo not found', async () => {
-                const res = await request(app).delete(`/todos/${new ObjectId}`);
-                expect(res.statusCode).toBe(404);
+            it('should return 404 if todo not found', (done) => {
+                request(app)
+                    .delete(`/todos/${new ObjectId}`)
+                    .set('x-auth', users[0].tokens[0].token)
+                    .end((err, res) => {
+                        expect(res.statusCode).toBe(404);
+                    });
+                done();
             });
         });
 
@@ -117,24 +149,38 @@ describe('todo-api', () => {
         });
 
         describe('PATCH /todos/:id', () => {
-            it('should update the todo', async () => {
+            it('should update the todo', (done) => {
                 const todo = todos[0];
                 const text = "updated todo1";
-                const res = await request(app).patch(`/todos/${todo._id}`).send({ text, completed: true });
-                expect(res.statusCode).toBe(200);
-                expect(res.body.todo.text).toBe(text);
-                expect(res.body.todo.completed).toBe(true);
-                expect(res.body.todo.completedAt).toBeTruthy();
+
+                request(app)
+                    .patch(`/todos/${todo._id}`)
+                    .set('x-auth', users[0].tokens[0].token)
+                    .send({ text, completed: true })
+                    .expect(200)
+                    .expect((res) => {
+                        expect(res.body.todo.text).toBe(text);
+                        expect(res.body.todo.completed).toBe(true);
+                        expect(res.body.todo.completedAt).toBeTruthy();
+                    });
+                done();
             });
 
-            it('should clear completedAt when todo is not completed', async () => {
+            it('should clear completedAt when todo is not completed', (done) => {
                 const todo = todos[1];
                 const text = "updated todo2";
-                const res = await request(app).patch(`/todos/${todo._id}`).send({ text, completed: false });
-                expect(res.statusCode).toBe(200);
-                expect(res.body.todo.text).toBe(text);
-                expect(res.body.todo.completed).toBe(false);
-                expect(res.body.todo.completedAt).toBeFalsy();
+
+                request(app)
+                    .patch(`/todos/${todo._id}`)
+                    .set('x-auth', users[1].tokens[0].token)
+                    .send({ text, completed: false })
+                    .expect(200)
+                    .expect((res) => {
+                        expect(res.body.todo.text).toBe(text);
+                        expect(res.body.todo.completed).toBe(false);
+                        expect(res.body.todo.completedAt).toBeFalsy();
+                    });
+                done();
             });
         });
     });

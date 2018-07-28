@@ -16,9 +16,10 @@ const port = process.env.PORT;
 app.use(bodyParser.json()); // make it possible to access req.body
 
 /** create todos **/
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate, (req, res) => {
     const todo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        _creator: req.user._id
     });
 
     todo.save().then((doc) => {
@@ -29,11 +30,11 @@ app.post('/todos', (req, res) => {
 });
 
 /** get all todos **/
-app.get('/todos', async (req, res) => {
+app.get('/todos', authenticate, async (req, res) => {
     let todos;
-    // try to find
+
     try {
-        todos = await Todo.find();
+        todos = await Todo.find({ _creator: req.user._id });
     } catch (e) {
         res.status(400).send(e);
     }
@@ -42,7 +43,7 @@ app.get('/todos', async (req, res) => {
 });
 
 /** get todos by id **/
-app.get('/todos/:id', async (req, res) => {
+app.get('/todos/:id', authenticate, async (req, res) => {
     let todo;
     const id = req.params.id;
     // validate id
@@ -51,7 +52,7 @@ app.get('/todos/:id', async (req, res) => {
     }
     // try to find
     try {
-        todo = await Todo.findById(id);
+        todo = await Todo.findOne({ _id: id, _creator: req.user._id });
     } catch (e) {
         res.status(400).send(e);
     }
@@ -64,7 +65,7 @@ app.get('/todos/:id', async (req, res) => {
 });
 
 /** delete todos by id **/
-app.delete('/todos/:id', async (req, res) => {
+app.delete('/todos/:id', authenticate, async (req, res) => {
     let todo;
     const id = req.params.id;
     // validate id
@@ -73,7 +74,7 @@ app.delete('/todos/:id', async (req, res) => {
     }
     // try to remove
     try {
-        todo = await Todo.findByIdAndRemove(id);
+        todo = await Todo.findOneAndRemove({ _id: id, _creator: req.user._id });
     } catch (e) {
         res.status(400).send(e);
     }
@@ -99,7 +100,7 @@ app.delete('/todos', async (req, res) => {
 });
 
 /** update todos **/
-app.patch('/todos/:id', async (req, res) => {
+app.patch('/todos/:id', authenticate, async (req, res) => {
     const id = req.params.id;
     const body = _.pick(req.body, ['text', 'completed']);
     // validate id
@@ -115,7 +116,7 @@ app.patch('/todos/:id', async (req, res) => {
     }
     // try to update
     try {
-        todo = await Todo.findByIdAndUpdate(id, { $set: body }, { new: true }) // the new will return the new object. the default is the old one.
+        todo = await Todo.findOneAndUpdate({ _id: id, _creator: req.user._id }, { $set: body }, { new: true }) // the new will return the new object. the default is the old one.
     } catch (e) {
         return res.status(400).send();
     }
