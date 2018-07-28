@@ -213,7 +213,42 @@ describe('todo-api', () => {
                         expect(res.body).toEqual({});
                     })
             });
-        })
+        });
+
+        describe('POST /users/login', () => {
+            it('should login user and return auth token', async () => {
+                let authHeader;
+                const { _id, email, password } = users[1];
+
+                await request(app)
+                    .post('/users/login')
+                    .send({ email, password })
+                    .expect(200)
+                    .expect((res) => {
+                        authHeader = res.headers['x-auth'];
+                        expect(authHeader).toBeTruthy();
+                    });
+
+                const user = await User.findById(_id);
+                expect(user.tokens[0]).toHaveProperty('access', 'auth');
+                expect(user.tokens[0]).toHaveProperty('token', authHeader);
+            });
+
+            it('should reject invalid login', async() => {
+                const { _id, email } = users[1];
+                const password = 'wrongPassword';
+
+                await request(app)
+                    .post('/users/login')
+                    .send({ email, password })
+                    .expect(400)
+                    .expect((res) => {
+                        expect(res.body).toEqual({});
+                        authHeader = res.headers['x-auth'];
+                        expect(authHeader).toBeFalsy();
+                    });
+            });
+        });
     })
 });
 

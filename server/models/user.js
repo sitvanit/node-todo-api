@@ -47,12 +47,18 @@ UserSchema.methods.generateAuthToken = async function () {
     const access = 'auth';
     const token = jwt.sign({ _id: user._id.toHexString(), access }, secret).toString();
 
+    const authTokenIndex = user.tokens.findIndex((token) => token.access === 'auth');
+
+    if (authTokenIndex !== -1) {
+        user.tokens.splice(authTokenIndex, 1);
+    }
+
     user.tokens.push({ access, token });
 
     // till now we updated the user locally, now we'll save the user to the DB
-    await user.save();
-
-    return token;
+    return user.save().then(() => {
+        return token;
+    });
 };
 
 UserSchema.statics.findByToken = function (token) {
