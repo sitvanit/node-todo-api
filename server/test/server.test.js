@@ -235,7 +235,7 @@ describe('todo-api', () => {
             });
 
             it('should reject invalid login', async() => {
-                const { _id, email } = users[1];
+                const { email } = users[1];
                 const password = 'wrongPassword';
 
                 await request(app)
@@ -248,6 +248,28 @@ describe('todo-api', () => {
                         expect(authHeader).toBeFalsy();
                     });
             });
+        });
+
+        describe('DELETE /users/me/token', () => {
+            it('should remove auth token on logout', (done) => {
+                const { _id, tokens } = users[0];
+
+                request(app)
+                    .delete('/users/me/token')
+                    .set('x-auth', tokens[0].token)
+                    .expect(200)
+                    .end((err, res) => {
+                        if(err) {
+                            return done(err);
+                        }
+
+                        user.findById(_id).then((user) => {
+                            expect(user.tokens.length).toBe(0);
+                        }).catch((e) => done(e));
+                    });
+
+                done();
+            })
         });
     })
 });
