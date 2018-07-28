@@ -30,3 +30,5 @@ if (env === 'development' || env === 'test') {
 // /
 // heroku_pw2k8zxz -> the DB
 
+// if the app is crushed in production, or I get 500 - debug with - heroku logs
+
