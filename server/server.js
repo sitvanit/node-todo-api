@@ -136,7 +136,7 @@ app.post('/users', async (req, res) => {
     try {
         await user.save();
         token = await user.generateAuthToken();
-        return res.header('x-auth', token).send(user);
+        res.header('x-auth', token).send(user);
     } catch (e) {
         res.status(400).send(e)
     }
@@ -145,6 +145,20 @@ app.post('/users', async (req, res) => {
 /** authenticate **/
 app.get('/users/me', authenticate, async (req, res) => {
     res.send(req.user);
+});
+
+/** login user - standard express route when we don't use the authenticate middleware (because we don't have the token) **/
+app.post('/users/login', async (req, res) => {
+    let user, token;
+    const body = _.pick(req.body, ['email', 'password']);
+
+    try {
+        user = await User.findByCredentials(body.email, body.password);
+        token = await user.generateAuthToken();
+        res.header('x-auth', token).send(user);
+    } catch (e) {
+        res.status(400).send();
+    }
 });
 
 app.listen(port, () => {
