@@ -64,13 +64,11 @@ UserSchema.methods.generateAuthToken = async function () {
 UserSchema.methods.removeToken = function (token) {
     const user = this;
 
-    if (user.tokens.length > 0) {
-        return user.update({
+    return user.update({
             $pull: {
                 tokens: { token }
             }
         })
-    }
 };
 
 UserSchema.statics.findByToken = function (token) {

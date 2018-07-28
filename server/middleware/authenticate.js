@@ -8,7 +8,7 @@ const authenticate = async function (req, res, next) {
         const user = await User.findByToken(token);
 
         if (!user) {
-            return Promise.reject();
+            res.status(401).send();
         }
 
         req.user = user;
