@@ -8,20 +8,23 @@ const { User } = require('../models/user');
 const { todos, populateTodos, users, populateUsers } = require('./seed/seed');
 
 describe('todo-api', () => {
-    describe('todos', () => {
-        beforeEach(populateTodos);
+    beforeEach(async () => {
+        await populateTodos();
+        await populateUsers();
+    });
 
+    describe('todos', () => {
         describe('POST /todos', () => {
             beforeEach(async () => {
                 await Todo.remove({});
             });
 
-            it('should create a new todo - promises', (done) => {
+            it('should create a new todo', (done) => {
                 const text = 'Test todo text';
 
                 request(app)
                     .post('/todos')
-                    .set('x-auth', users[0].tokens[0].token)
+                    .set('x-auth', users[1].tokens[0].token)
                     .send({ text })
                     .expect(200)
                     .expect((res) => {
@@ -37,9 +40,7 @@ describe('todo-api', () => {
                             expect(todos[0].text).toBe(text);
                             done();
                         }).catch(e => done(e))
-                    })
-
-                done();
+                    });
             });
 
             it('should not create todo with invalid body data', (done) => {
@@ -61,11 +62,11 @@ describe('todo-api', () => {
                 request(app)
                     .get('/todos')
                     .set('x-auth', users[0].tokens[0].token)
-                    .end((err, res) => {
-                        expect(res.statusCode).toBe(200);
+                    .expect(200)
+                    .expect(res => {
                         expect(res.body.todos.length).toBe(1);
-                    });
-                done();
+                    })
+                    .end(done);
             });
         });
 
@@ -74,77 +75,78 @@ describe('todo-api', () => {
                 request(app)
                     .get(`/todos/${todos[0]._id}`)
                     .set('x-auth', users[0].tokens[0].token)
-                    .end((err, res) => {
-                        expect(res.statusCode).toBe(200);
+                    .expect(200)
+                    .expect(res => {
                         expect(res.body.todo.text).toBe(todos[0].text);
-                    });
-                done();
+                    })
+                    .end(done);
             });
 
             it('should return 404 for non-object ids', (done) => {
                 request(app)
                     .get('/todos/123')
                     .set('x-auth', users[0].tokens[0].token)
-                    .end((err, res) => {
-                        expect(res.statusCode).toBe(404);
-                    });
-                done();
+                    .expect(404)
+                    .end(done);
             });
 
             it('should return 404 if todo is not found', (done) => {
                 request(app)
                     .get(`/todos/${new ObjectId()}`)
                     .set('x-auth', users[0].tokens[0].token)
-                    .end((err, res) => {
-                        expect(res.statusCode).toBe(404);
-                    });
-                done();
+                    .expect(404)
+                    .end(done);
             });
         });
 
         describe('DELETE /todos/:id', () => {
             it('should remove a todo', (done) => {
-                const id = todos[1]._id;
+                const id = todos[0]._id;
                 request(app)
                     .delete(`/todos/${id}`)
                     .set('x-auth', users[0].tokens[0].token)
-                    .end((res, err) => {
-                        expect(res.statusCode).toBe(200);
+                    .expect(200)
+                    .expect(res => {
                         expect(res.body.todo._id).toBe(id.toString());
+                    })
+                    .end((err, res) => {
+                        if (err) {
+                            return done(err);
+                        }
 
                         Todo.findById(id).then(todo => {
                             expect(todo).toBeFalsy();
-                        });
+                        }).catch(e => done(e));
+                        done();
                     });
-                done()
             });
 
             it('should return 404 if objectId is invalid', (done) => {
                 request(app)
                     .delete('/todos/123')
                     .set('x-auth', users[0].tokens[0].token)
-                    .end((err, res) => {
-                        expect(res.statusCode).toBe(404);
-                    });
-                done();
+                    .expect(404)
+                    .end(done);
             });
 
             it('should return 404 if todo not found', (done) => {
                 request(app)
-                    .delete(`/todos/${new ObjectId}`)
+                    .delete(`/todos/${new ObjectId()}`)
                     .set('x-auth', users[0].tokens[0].token)
-                    .end((err, res) => {
-                        expect(res.statusCode).toBe(404);
-                    });
-                done();
+                    .expect(404)
+                    .end(done);
             });
         });
 
         describe('DELETE /todos', () => {
-            it('should remove all', async () => {
-                const res = await request(app).delete('/todos');
-                expect(res.statusCode).toBe(200);
-                expect(res.body.ok).toBe(1);
+            it('should remove all', (done) => {
+                request(app)
+                    .delete('/todos')
+                    .expect(200)
+                    .expect(res => {
+                        expect(res.body.ok).toBe(1);
+                    })
+                    .end(done);
             });
         });
 
@@ -162,6 +164,7 @@ describe('todo-api', () => {
                         expect(res.body.todo.text).toBe(text);
                         expect(res.body.todo.completed).toBe(true);
                         expect(res.body.todo.completedAt).toBeTruthy();
+                        exoect(typeof res.body.completedAt).toBe('number');
                     });
                 done();
             });
@@ -186,8 +189,6 @@ describe('todo-api', () => {
     });
 
     describe('users', () => {
-        beforeEach(populateUsers);
-
         describe('GET /users/me', () => {
             it('should return user if authenticated', async () => {
                 request(app)

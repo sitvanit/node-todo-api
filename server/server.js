@@ -32,7 +32,7 @@ app.post('/todos', authenticate, (req, res) => {
 /** get all todos **/
 app.get('/todos', authenticate, async (req, res) => {
     let todos;
-
+    
     try {
         todos = await Todo.find({ _creator: req.user._id });
     } catch (e) {
@@ -43,48 +43,44 @@ app.get('/todos', authenticate, async (req, res) => {
 });
 
 /** get todos by id **/
-app.get('/todos/:id', authenticate, async (req, res) => {
-    let todo;
+app.get('/todos/:id', authenticate, (req, res) => {
     const id = req.params.id;
     // validate id
     if(!ObjectId.isValid(id)) {
         return res.status(404).send();
     }
-    // try to find
-    try {
-        todo = await Todo.findOne({ _id: id, _creator: req.user._id });
-    } catch (e) {
+
+    Todo.findOne({ _id: id, _creator: req.user._id })
+        .then((todo) => {
+            if (!todo) {
+                return res.status(404).send();
+            }
+            res.send({ todo });
+        }).catch((e) => {
         res.status(400).send(e);
-    }
-    // if found nothing
-    if (!todo) {
-        res.status(404).send();
-    }
-    // send response
-    res.send({ todo });
+    })
 });
 
 /** delete todos by id **/
-app.delete('/todos/:id', authenticate, async (req, res) => {
-    let todo;
+app.delete('/todos/:id', authenticate, (req, res) => {
     const id = req.params.id;
     // validate id
     if(!ObjectId.isValid(id)) {
         return res.status(404).send();
     }
-    // try to remove
-    try {
-        todo = await Todo.findOneAndRemove({ _id: id, _creator: req.user._id });
-    } catch (e) {
-        res.status(400).send(e);
-    }
-    // if nothing to remove
-    if (!todo) {
-        res.status(404).send();
-    }
-    // send response
-    res.send({ todo });
+
+    Todo.findOneAndRemove({ _id: id, _creator: req.user._id })
+        .then(todo => {
+            if (!todo) {
+                return res.status(404).send();
+            }
+            res.send({ todo });
+        })
+        .catch(e => {
+            res.status(400).send(e);
+        })
 });
+
 
 /** delete all todos **/
 app.delete('/todos', async (req, res) => {

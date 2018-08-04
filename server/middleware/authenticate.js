@@ -6,7 +6,6 @@ const authenticate = async function (req, res, next) {
 
     try {
         const user = await User.findByToken(token);
-
         if (!user) {
             res.status(401).send();
         }
