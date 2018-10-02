@@ -11,7 +11,7 @@
   "engines": {
     "node": "8.9.0"
   },
-  "author": "",
+  "author": "Sitvanit Meltzer",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",

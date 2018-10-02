@@ -4,7 +4,6 @@ const { ObjectId } = require('mongodb');
 const _ = require('lodash');
 
 require('./config/config');
-const { mongoose } = require('./db/mongoose');
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
 const { authenticate } = require('./middleware/authenticate');
